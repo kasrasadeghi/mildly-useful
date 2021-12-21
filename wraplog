@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# USAGE: ./wraplog <target> <timelog> <cmd...>
+#   writes start and end times to a file
+
+# this is the make target, like: build, release, debug, run
+TARGET=$1
+RUNID=`./atomic_counter runid`
+echo starting TARGET.ID: \[\[ $TARGET.$RUNID \]\]
+RUNLOG="log/$TARGET.$RUNID"
+shift 1
+
+# this is the log of all of the commands start time and end time
+MKLOG=$1
+shift 1
+
+echo "$TARGET.$RUNID: start " `cat /etc/hostname` `date` | tee -a $MKLOG | tee $RUNLOG
+echo $ $@ | tee -a $RUNLOG
+# curly braces so time doesn't eat the redirection: https://stackoverflow.com/questions/13356628/how-to-redirect-the-output-of-the-time-command-to-a-file-in-linux
+# pipe with stderr: https://stackoverflow.com/questions/692000/how-do-i-write-stderr-to-a-file-while-using-tee-with-a-pipe
+{ /usr/bin/time -v eval $@ ; } |& tee -a $RUNLOG && echo COMPLETE
+echo "$TARGET.$RUNID: end " `cat /etc/hostname` `date` | tee -a $MKLOG | tee -a $RUNLOG
