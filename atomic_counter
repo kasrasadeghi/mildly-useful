@@ -1,0 +1,17 @@
+!/bin/bash
+NAME=$1
+DATA="$NAME.data"
+
+set -e
+
+(
+  # atomic file write: https://unix.stackexchange.com/questions/70/what-unix-commands-can-be-used-as-a-semaphore-lock
+  # Wait for lock on $NAME.exclusivelock (fd 200) for 10 seconds
+  flock -x -w 10 200
+
+  cat "$DATA"
+
+  # Do stuff
+  echo $((`cat $DATA` + 1)) > "$DATA"
+
+) 200>$NAME.exclusivelock
